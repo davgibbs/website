@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% load wagtailcore_tags %}
+{% load static core_tags %}
+
+{% block body_class %}template-{{ self.get_verbose_name|slugify }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row well">
+            <div class="col-md-8">
+                <div class="row">
+                    <article>
+                        {% for child in self.body %}
+                           {% if child.block_type == 'h2' %}
+                                <h2>{{ child }}</h2>
+                            {% elif child.block_type == 'h3' %}
+                                <h3>{{ child }}</h3>
+                            {% elif child.block_type == 'h4' %}
+                                <h4>{{ child }}</h4>
+                            {% else %}
+                                <section class="block-{{ block.block_type }}">
+                                    {{ child }}
+                                </section>
+                            {% endif %}
+                        {% endfor %}
+                    </article>
+                </div>
+                <div class="row">
+                    {% get_blogs categories as blog %}
+                    {% for blog in blogs %}
+                        <h3>{{ blog.title }}</h3>
+                        {{ blog.body|richtext }}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-4">{% meetups %}</div>
+            <div class="col-md-4">{% sponsors %}</div>
+        </div>
+    </div>
+{% endblock content %}

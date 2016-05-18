@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django import forms
 from modelcluster.fields import ParentalKey
 
 from wagtail.wagtailadmin.edit_handlers import FieldPanel, InlinePanel
-from wagtail.wagtailcore.blocks import RawHTMLBlock
+from wagtail.wagtailcore.blocks import RawHTMLBlock, StreamBlock, CharBlock, RichTextBlock, StructBlock, FieldBlock, TextBlock 
 from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
@@ -18,6 +19,9 @@ from wagtail.wagtailcore import blocks
 from wagtail.wagtailadmin.edit_handlers import StreamFieldPanel
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailembeds.blocks import EmbedBlock
+from wagtail.wagtaildocs.blocks import DocumentChooserBlock
+from wagtail.wagtailsearch import index
+
 
 from sponsors.models import Sponsor, SponsorshipLevel
 
@@ -158,6 +162,71 @@ class SimplePage(Page, MeetupMixin, SponsorMixin):
 
     settings_panels = (Page.settings_panels + MeetupMixin.settings_panels +
                        SponsorMixin.settings_panels)
+
+
+class ImageFormatChoiceBlock(FieldBlock):
+    field = forms.ChoiceField(choices=(
+        ('left', 'Wrap left'), ('right', 'Wrap right'), ('mid', 'Mid width'), ('full', 'Full width'),
+    ))
+
+
+class PullQuoteBlock(StructBlock):
+    quote = TextBlock("quote title")
+    attribution = CharBlock()
+
+    class Meta:
+        icon = "openquote"
+
+
+class ImageBlock(StructBlock):
+    image = ImageChooserBlock()
+    caption = RichTextBlock()
+    alignment = ImageFormatChoiceBlock()
+
+
+class HTMLAlignmentChoiceBlock(FieldBlock):
+    field = forms.ChoiceField(choices=(
+        ('normal', 'Normal'), ('full', 'Full width'),
+    ))
+
+
+class AlignedHTMLBlock(StructBlock):
+    html = RawHTMLBlock()
+    alignment = HTMLAlignmentChoiceBlock()
+
+    class Meta:
+        icon = "code"
+
+
+class DemoStreamBlock(StreamBlock):
+    h2 = CharBlock(icon="title", classname="title")
+    h3 = CharBlock(icon="title", classname="title")
+    h4 = CharBlock(icon="title", classname="title")
+    intro = RichTextBlock(icon="pilcrow")
+    paragraph = RichTextBlock(icon="pilcrow")
+    aligned_image = ImageBlock(label="Aligned image", icon="image")
+    pullquote = PullQuoteBlock()
+    aligned_html = AlignedHTMLBlock(icon="code", label='Raw HTML')
+    document = DocumentChooserBlock(icon="doc-full-inverse")
+
+
+class AdvancedPage(Page, MeetupMixin, SponsorMixin):
+    """
+    A more flexible version of SimplePage which allows different headings
+    https://github.com/torchbox/wagtaildemo/blob/master/demo/models.py
+    """
+    body = StreamField(DemoStreamBlock())
+    search_fields = Page.search_fields + (
+        index.SearchField('body'),
+    )
+
+    class Meta:
+        verbose_name = "Advanced Page"
+
+    content_panels = [
+        FieldPanel('title', classname="full title"),
+        StreamFieldPanel('body'),
+    ]
 
 
 @newsindex
